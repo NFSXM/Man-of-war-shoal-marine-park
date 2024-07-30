@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mooring Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        #map {
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out {
+            font-size: 18px;
+            width: 30px;
+            height: 30px;
+        }
+
+        #sidebar {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            top: 0;
+            right: 0;
+            background-color: white;
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 60px;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
+
+        #sidebar .content {
+            padding: 15px;
+        }
+
+        #sidebar a {
+            padding: 8px 8px 8px 32px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #818181;
+            display: block;
+            transition: 0.3s;
+        }
+
+        #sidebar a:hover {
+            color: blue;
+        }
+
+        #openSidebarBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 3;
+        }
+
+ 
+        .backBtn {
+            font-size: 20px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .sub-sidebar {
+            display: none;
+            max-height: 750px;
+            overflow-y:auto
+        }
+
+        .home {
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px;
+            color: black;
+            margin-bottom: 30px;
+        }
+
+        .separator {
+            border-top: 1px solid #ccc;
+            margin: 10px 0;
+        }
+
+        .logo {
+            text-align: center;
+            margin-top: 20px; /* Espacement en haut */
+            padding-bottom: 10px; /* Espacement en bas */
+        }
+
+        .logo img {
+            max-width: 80%; /* Ajustez la largeur maximale de l'image selon vos besoins */
+            height: auto; /* Pour conserver les proportions de l'image */
+            display: block; /* Éviter les marges inattendues */
+            margin: 0 auto; /* Centre l'image horizontalement */
+        }
+
+        
+        .popup-content {
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+        }
+
+        .popup-content .site-name {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .popup-content .label {
+            font-weight: bold;
+        }
+
+  .legend {
+    position: absolute;
+    bottom: 30px;
+    left: 10px;
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    max-width: 200px; /* Vous pouvez ajuster la largeur maximale si nécessaire */
+    white-space: nowrap; /* Empêche les retours à la ligne */
+}
+
+.legend .legend-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.legend .legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.legend .legend-color {
+    width: 15px;
+    height: 15px;
+    margin-right: 10px;
+    border-radius: 50%;
+}
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div id="mainSidebar" class="content">
+            <div class="logo">
+                <img src="https://i0.wp.com/naturefoundationsxm.org/wp-content/uploads/2024/06/NF_Hor_PrimaryLogo_FullColor.png?resize=438%2C192&ssl=1" alt="Logo"> <!-- Remplacez "your-logo-url.png" par l'URL de votre logo -->
+            </div>
+            <div class="home">Home</div>
+            <a href="#" onclick="showSubSidebar('feesSidebar')">Mooring Fees 2024</a>
+            <div class="separator"></div>
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSc27lNzj5H2NHSY7IEgT-85HjsBurRVXGk5QVdvYGx-z_VFig/viewform" target="_blank">Mooring Monitoring Form</a>
+            <div class="separator"></div>
+            <a href="https://naturefoundationsxm.org/diving-in-sint-maarten/regulations/" target="_blank">Regulations</a>
+             <div class="separator"></div>
+                   <a href="https://drive.google.com/file/d/1FZMw_3YNYiXmM_ZtMLxWQ1sY3QQIgK_A/view?usp=sharing" target="_blank">Boat registration</a>
+             <div class="separator"></div>
+                   <a href="https://naturefoundationsxm-my.sharepoint.com/:x:/r/personal/external_naturefoundationsxm_org/_layouts/15/Doc.aspx?sourcedoc=%7B3140DE8D-466B-42EF-AD4E-484D5BF36231%7D&file=Boat%20Log%20-%20Reporting.xlsx&action=default&mobileredirect=true" target="_blank">Boat log</a>
+              <div class="separator"></div>
+            <a href="https://1drv.ms/x/c/467df84c49550cbf/ERtAankW69VMjxgC6BYQNscBAQ97lorL-t4FsjJm55nJDg?e=04fHEY" target="_blank">Inventory</a>
+        </div>
+        <div id="feesSidebar" class="content sub-sidebar">
+            <div class="backBtn" onclick="showMainSidebar()">← Back</div>
+            <div id="mooringFeesList">
+                <h2>Mooring Fees 2024</h2>
+            </div>
+        </div>
+    </div>
+    <div id="openSidebarBtn" onclick="toggleNav()">☰</div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Initialisation de la carte
+        var map = L.map('map', {
+            center: [18.0, -63.0],
+            zoom: 12,
+            wheelPxPerZoomLevel: 100,
+            wheelDebounceTime: 40
+        });
+        
+// Création de la légende
+var legend = L.control({ position: 'bottomleft' });
+
+legend.onAdd = function (map) {
+    var div = L.DomUtil.create('div', 'legend');
+    div.innerHTML += '<div class="legend-title">Caption</div>';
+    div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background-color: green;"></div>Good state</div>';
+    div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background-color: orange;"></div>Need for maintenance</div>';
+    div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background-color: red;"></div>Need for repair</div>';
+    div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background-color: gray;"></div>No mooring</div>';
+    return div;
+};
+
+// Ajouter la légende à la carte
+legend.addTo(map);
+        
+        // Ajouter des tuiles OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Fonction pour obtenir et afficher la position GPS
+        function onLocationFound(e) {
+            var radius = e.accuracy / 2;
+
+            L.marker(e.latlng).addTo(map)
+                .bindPopup("You are here").openPopup();
+        }
+
+        // Fonction pour gérer les erreurs de géolocalisation
+        function onLocationError(e) {
+            alert(e.message);
+        }
+
+        // Obtenir la position GPS de l'appareil
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
+
+        map.locate({setView: true, maxZoom: 16});
+
+        // URL de la feuille Google Sheets publiée (remplacer par l'URL de votre feuille)
+        var sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9Qpof8G9gTABd7CUVEAvO8FjphonEQzG2S0O1jm0jK230jsWQ7oGaEoErPegDGG8LOJFaABHDlMsA/pub?gid=2127970502&single=true&output=csv';
+       
+        // Fonction pour récupérer et afficher les données
+        function updateMoorings() {
+            fetch(sheetUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.text();
+                })
+                .then(csvText => {
+                    console.log("CSV Data:", csvText);
+                    var data = csvToArray(csvText);
+                    console.log("Parsed Data:", data);
+                    data.forEach(function(row) {
+                        try {
+                            var timestamp = row["Horodateur"];
+                            var mooringLine = row["Mooring line"];
+                            var condition = row["Condition of the mooring line"];
+                            var buoy = row["Buoy"];
+                            var pickupBuoy = row["Pickup buoy"];
+                            var comments = row["Comments"];
+                            var color = row["Couleur"];
+                            var lat = parseFloat(row["Latitude"]);
+                            var lng = parseFloat(row["Longitude"]);
+                            var depth = row["Depth (m)"]
+                            var type = row["Type of attachment"];
+                            var ropelenght = row["line lenght"];
+                            var nick = row["Nick name"];
+
+                            if (isNaN(lat) || isNaN(lng) || !color) {
+                                throw new Error(`Invalid data for mooring: ${mooringLine}, lat: ${lat}, lng: ${lng}, color: ${color}`);
+                            }
+
+                            console.log("Mooring Point:", mooringLine, lat, lng, color);
+
+                            var marker = L.circleMarker([lat, lng], {
+                                color: color,
+                                radius: 4,
+                                opacity: 0.5,
+                                fillOpacity: 0.5,
+                                fillColor: color
+                            }).addTo(map);
+
+                            marker.bindPopup(
+                                "<div class='popup-content'>" +
+                                    "<div class='site-name'>" + mooringLine + "</div>" +
+                                    "<div><span class='label'>Horodateur:</span> " + timestamp + "</div>" +
+                                    "<div><span class='label'>Condition:</span> " + condition + "</div>" +
+                                    "<div><span class='label'>Buoy:</span> " + buoy + "</div>" +
+                                    "<div><span class='label'>Pickup Buoy:</span> " + pickupBuoy + "</div>" +
+                                    "<div><span class='label'>Latitude:</span> " + lat + "</div>" +
+                                    "<div><span class='label'>Longitude:</span> " + lng + "</div>" +
+                                    "<div><span class='label'>Type of attachment:</span> " + type + "</div>" +
+                                    "<div><span class='label'>Depth (m):</span> " + depth + "</div>" +
+                                    "<div><span class='label'>Rope Lenght:</span> " + ropelenght + "</div>" +
+                                    "<div><span class='label'>Nick name:</span> " + nick + "</div>" +
+                                    "<div><span class='label'>Comments:</span> " + comments + "</div>" +
+                                "</div>"
+                            );
+                        } catch (error) {
+                            console.error(error.message);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('There has been a problem with your fetch operation:', error);
+                });
+        }
+
+    // Convertir CSV en tableau
+    function csvToArray(str, delimiter = ",") {
+        const headers = str.slice(0, str.indexOf("\n")).split(delimiter);
+        const rows = str.slice(str.indexOf("\n") + 1).split("\n");
+
+        return rows.map(function (row) {
+            const values = row.split(delimiter);
+            const el = headers.reduce(function (object, header, index) {
+                object[header.trim()] = values[index] ? values[index].trim() : '';
+                return object;
+            }, {});
+            return el;
+        }).filter(row => Object.keys(row).length > 1);
+    }
+
+    // Mettre à jour les mouillages toutes les heures
+    updateMoorings();
+    setInterval(updateMoorings, 5000);
+
+    function toggleNav() {
+        var sidebar = document.getElementById("sidebar");
+        if (sidebar.style.width === "250px") {
+            sidebar.style.width = "0";
+        } else {
+            sidebar.style.width = "250px";
+        }
+    }
+
+    function showMainSidebar() {
+        document.getElementById("mainSidebar").style.display = "block";
+        document.getElementById("feesSidebar").style.display = "none";
+    }
+
+    function showSubSidebar(id) {
+        document.getElementById("mainSidebar").style.display = "none";
+        document.getElementById(id).style.display = "block";
+    }
+
+    function updateMooringFees() {
+        fetch(sheetUrl)
+            .then(response => response.text())
+            .then(csvText => {
+                var data = csvToArray(csvText);
+                var feesContent = document.getElementById("mooringFeesList");
+                feesContent.innerHTML = "<h2>Mooring Fees 2024</h2>";
+                data.forEach(function(row) {
+                    var date = row["Date"];
+                    var mooringFees = row["Mooring fees"];
+                    var amount = row["Amount"];
+                    if (date && mooringFees && amount) {
+                        feesContent.innerHTML += "<p>Date: " + date + "<br>Mooring Fees: " + mooringFees + "<br>Amount: " + amount + "</p><hr>";
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('There has been a problem with your fetch operation:', error);
+            });
+    }
+
+    updateMooringFees();
+</script>
+</body>
+</html>
